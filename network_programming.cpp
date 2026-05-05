@@ -39,6 +39,17 @@ int main() {
     send (socketfd, message, strlen(message), 0);
 
 
+    // receive
+    char buffer [1024];
+    int n = recv (socketfd, buffer, sizeof(buffer) - 1, 0);
+
+    while (n > 0) {
+        buffer[n] = '\0';
+        write (1, buffer, n);
+        std::printf("[ recv chunk %d bytes ]\n", n);
+    }
+
+
 
 
     return EXIT_SUCCESS;
