@@ -50,8 +50,12 @@ int main() {
     }
 
 
+    
+    // close
+    close (socketfd);
 
-
+    std::printf("\n\n");
     return EXIT_SUCCESS;
+
 }
 
