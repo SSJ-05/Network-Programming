@@ -1,9 +1,15 @@
 // Ch 11 CSAPP Networking// 29.04.26// ZeroK
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 #include <cstdlib>
 #include <cstdint>
 #include <cstddef>
+#include <cstdio>
+#include <cstring>
+
 
 int main() {
 
