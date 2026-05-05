@@ -31,6 +31,15 @@ int main() {
     }
 
 
+    // send
+    const char* message =  "GET / HTTP/1.1\r\n"
+                           "Host: google.com\r\n"
+                           "Connection: close\r\n\r\n";
+
+    send (socketfd, message, strlen(message), 0);
+
+
+
 
     return EXIT_SUCCESS;
 }
