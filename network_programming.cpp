@@ -22,6 +22,15 @@ int main() {
     inet_pton (AF_INET, ip, &address.sin_addr);
 
 
+    // connect
+    int result = connect (socketfd, (sockaddr*)&address, sizeof(address));
+
+    if (result != 0) {
+        perror("connect");
+        return 1;
+    }
+
+
 
     return EXIT_SUCCESS;
 }
