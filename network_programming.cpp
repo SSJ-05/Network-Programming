@@ -15,20 +15,22 @@ int main() {
 
     std::printf("\n\n");
     
-    // socket
+    // 1. create a socket with IPv4, TCP stream
     int socketfd = socket (AF_INET, SOCK_STREAM, 0);
 
+    // target server - google.com
     const char* ip = "142.250.192.206";
 
+    // build addr struct
     sockaddr_in address {};
-    address.sin_family = AF_INET;
-    address.sin_port   = htons (80);
+    address.sin_family = AF_INET;        // IPv4
+    address.sin_port   = htons (80);     // convert host to network byte order(big endian) on port 80
 
 
-    inet_pton (AF_INET, ip, &address.sin_addr);
+    inet_pton (AF_INET, ip, &address.sin_addr);    // convert ip string to binary
 
 
-    // connect
+    // 2. connect to target server
     int result = connect (socketfd, (sockaddr*)&address, sizeof(address));
 
     if (result != 0) {
@@ -37,27 +39,28 @@ int main() {
     }
 
 
-    // send
+    // build HTTP request
     const char* message =  "GET / HTTP/1.1\r\n"
                            "Host: google.com\r\n"
                            "Connection: close\r\n\r\n";
 
+    // 3. send request to target server
     send (socketfd, message, strlen(message), 0);
 
 
-    // receive
-    char buffer [1024];
-    int n = recv (socketfd, buffer, sizeof(buffer) - 1, 0);
-
-    while (n > 0) {
-        buffer[n] = '\0';
-        write (1, buffer, n);
+    // 4. receive response from server
+    char buffer [1024];        // store raw bytes from TCP stream
+    
+    int n;
+    while ( (n = recv (socketfd, buffer, sizeof(buffer) - 1, 0)) > 0) {
+        buffer[n] = '\0';            // make it valid c-string
+        write (1, buffer, n);        // print raw bytes
         std::printf("[ recv chunk %d bytes ]\n", n);
     }
 
 
     
-    // close
+    // 5. close the socket/connection
     close (socketfd);
 
     std::printf("\n\n");
