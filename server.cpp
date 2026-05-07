@@ -17,16 +17,12 @@
 int main () {
     std::printf("\n\n");
 
-    constexpr std::string_view  MY_PORT   { "5555" };   // client will connect to this port
-    constexpr std::uint8_t      BACKLOG   { 10 };       // no. of requests to connect to be queued
+    constexpr char           MY_PORT[] { "5555" };   // client will connect to this port
+    constexpr std::uint8_t   BACKLOG   { 10 };       // no. of requests to connect to be queued
 
     // create struct addrinfo
-    sockaddr_storage cli_addr;
-    socklen_t addr_size;
-    addrinfo hints, *res;
-    int socketfd, new_fd;
+    addrinfo hints {}, *res;
 
-    std::memset(&hints, 0, sizeof(hints));
     hints.ai_family     =   AF_INET;
     hints.ai_socktype   =   SOCK_STREAM;
     hints.ai_flags      =   AI_PASSIVE;
@@ -34,7 +30,7 @@ int main () {
     getaddrinfo (nullptr, MY_PORT, &hints, &res);
 
     // 1. create a socket
-    socketfd = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
+    int socketfd = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
 
 
     // 2. bind to port we passed in getaddrinfo
