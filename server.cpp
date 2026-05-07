@@ -29,19 +29,23 @@ int main () {
 
     getaddrinfo (nullptr, MY_PORT, &hints, &res);
 
+    
+    
     // 1. create a socket
     int socketfd = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
+    
+    std::uint8_t yes { 1 };
+    setsockopt (socketfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
-
+    
+    
     // 2. bind to port we passed in getaddrinfo
     bind (socketfd, res->ai_addr, res->ai_addrlen);
-    // connect (socketfd, res->ai_addr, res->ai_addrlen);
-
-    int yes { 1 };
-    setsockopt (listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+    
 
 
     // 3. listen for incoming requests from client
+    listen (socketfd, BACKLOG);
     
 
     // 4. accept request - TCP handshake
