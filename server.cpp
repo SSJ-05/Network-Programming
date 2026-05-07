@@ -15,7 +15,7 @@
 
 
 int main () {
-    std::printf("\n\n");
+    std::printf("\n\n=== SERVER ===\n\n");
 
     constexpr char           MY_PORT[] { "5555" };   // client will connect to this port
     constexpr std::uint8_t   BACKLOG   { 10 };       // no. of requests to connect to be queued
@@ -46,10 +46,15 @@ int main () {
 
     // 3. listen for incoming requests from client
     listen (socketfd, BACKLOG);
-    
+
+    std::printf("\nWaiting for connection...\n");
 
     // 4. accept request - TCP handshake
+    sockaddr cli_addr {};
+    socklen_t addr_size    =    sizeof (cli_addr);
+    int newfd              =    connect (socketfd, (sockaddr*)&cli_addr, &addr_size);
 
+    std::printf("\nClient connected.\n");
 
     // 5. send
 
