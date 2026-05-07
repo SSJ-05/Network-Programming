@@ -49,6 +49,8 @@ int main () {
 
     std::printf("\nWaiting for connection...\n");
 
+
+    
     // 4. accept request - TCP handshake
     sockaddr cli_addr {};
     socklen_t addr_size    =    sizeof (cli_addr);
@@ -56,13 +58,25 @@ int main () {
 
     std::printf("\nClient connected.\n");
 
+
+    
     // 5. send
+    const char* msg { "ZeroK was here" };
+    send (newfd, msg, strlen(msg), 0);
 
-
+    
     // 6. recv
+    char buff [1024];
+    int r;
+    while ( (r = recv(newfd, buff, sizeof(buff)-1, 0)) > 0 ) {
+        buff[r] = '\0';
+        write (1, buff, r);
+    }  
 
 
-
+    // 7. close connection
+    close (newfd);
+    close (socketfd);
 
     std::printf("\n\n");
     return EXIT_SUCCESS;
