@@ -8,7 +8,7 @@
 // epoll_wait = ask kernel for ready sockets
 
 // level triggered = unread data remains active, epoll continues notifying
-// edge triggered  = 
+
 
 
 #include <sys/types.h>
