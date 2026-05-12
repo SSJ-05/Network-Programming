@@ -30,7 +30,7 @@ constexpr char MYPORT[]     { "5555" };
 constexpr int  MAX_CLI      { 32 };         // max simultaneous clients allowed
 constexpr int  MAX_EVENTS   { 64 };         // max events for polling allowed
 constexpr int  BUFFER_SIZE  { 1024 };
-static    int  client_count { 0 };
+constinit int  client_count { 0 };
 
 
 
