@@ -130,4 +130,167 @@ int main() {
     // getaddrinfo
     addrinfo hints {}, *res;    // hints = socket properties, res = linked list returned by kernel
     
-    hints.ai_family     =   AF_
+    hints.ai_family     =   AF_INET;
+    hints.ai_socktype   =   SOCK_STREAM;
+    hints.ai_flags      =   AI_PASSIVE;
+
+    getaddrinfo (nullptr, MYPORT, &hints, &res);
+
+
+    
+    // socket
+    int listener = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
+
+    // make listener socket non blocking
+    int flag_listener = fcntl (listener, F_GETFL, 0);
+    fcntl (listener, F_SETFL, flag_listener | O_NONBLOCK);
+
+    // quick rebinding to the same port after restart
+    int yes { 1 };
+    setsockopt (listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+    bind (listener, res->ai_addr, res->ai_addrlen);
+
+    listen (listener, SOMAXCONN);
+
+    freeaddrinfo (res);
+
+
+
+
+    // create epoll instance/ kernel event manager
+    int epfd { epoll_create1(0) };
+    
+    if (epfd == -1) {
+        perror ("epoll_create1");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+    // register listener socket
+    epoll_event ev {};                    // ev = which events to monitor
+    epoll_event events [MAX_EVENTS];      // buffer for listener + new connections
+
+    ev.events   =   EPOLLET |             // edge triggered
+                    EPOLLIN |             // notify when ready
+                    EPOLLRDHUP;           // peer disconnected full/half
+    ev.data.fd  =   listener;             // store fd of the event
+
+    if (epoll_ctl (epfd, EPOLL_CTL_ADD, listener, &ev) == -1) {
+        perror ("epoll_ctl");
+        exit(EXIT_FAILURE);
+    }
+
+    std::printf("\nWaiting for connection...\n");
+
+
+
+    // event loop
+    while (true) {
+        int nfds = epoll_wait (epfd, events, MAX_EVENTS, -1);   // blocks until 1 fd is ready
+
+        if (nfds == -1) {
+            perror ("epoll_wait");
+            exit(EXIT_FAILURE);
+        }
+
+        // process only active sockets, not entire fd space
+        for (int i {0}; i < nfds; ++i) {
+            int currentfd = events[i].data.fd;      // store current fd in event data array
+
+            // connect new client
+            if (currentfd == listener) {
+                while (true) {
+                    sockaddr_storage  cli_addr  {};
+                    socklen_t         addrlen   { sizeof(cli_addr) };
+
+                    int newfd = accept (listener, (sockaddr*)&cli_addr, &addrlen);
+
+                    if (newfd == -1) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+                        perror("accept");
+                        break;
+                    }
+                    
+                    if (client_count >= MAX_CLI) {
+                        std::printf("\nToo many clients. Rejecting connection.\n");
+                        close (newfd);
+                        continue;
+                    }
+                    ++client_count;
+ 
+                    if (newfd == -1) {
+                        perror("accept");
+                        continue;
+                    }
+
+                    // make socket non blocking, make send/recv return immediately
+                    int flags = fcntl (newfd, F_GETFL, 0);
+                    fcntl (newfd, F_SETFL, flags | O_NONBLOCK);
+
+                    std::printf("\nNew connection fd: %d\n", newfd);
+
+
+                    epoll_event cli_ev {};
+                    cli_ev.events   = EPOLLET | EPOLLIN | EPOLLRDHUP;
+                    cli_ev.data.fd  = newfd;
+
+                    epoll_ctl (epfd, EPOLL_CTL_ADD, newfd, &cli_ev);    // add newfd to kernel epoll ready list
+                }
+            }
+
+            // recv existing client data
+            // use while(1) to drain socket fully until EAGAIN, otherwise data remains stranded
+            else {
+                // handle EPOLLOUT events
+                if (events[i].events & (EPOLLERR | EPOLLHUP))  
+                {
+                    epoll_event ev {};
+                    flush_send_buffer (currentfd, ev, epfd, clients[currentfd]);
+                }
+
+                while (true) {
+                    char buffer [1024];
+                    int bytes = recv (currentfd, buffer, sizeof(buffer), 0);
+
+                    // actual data recv'd
+                    if (bytes > 0) {
+                        std::memcpy (clients[currentfd].out_buf + clients[currentfd].write_pos, buffer, bytes);
+                        clients[currentfd].write_pos += bytes;
+
+                        epoll_event ev {};
+                        flush_send_buffer (currentfd, ev, epfd, clients[currentfd]);
+                        write (STDOUT_FILENO, buffer, bytes);
+                    }
+
+                    // client disconnected
+                    else if (bytes == 0) {
+                        std::printf("Socket %d disconnected.\n", currentfd);
+                        close (currentfd);
+                        epoll_ctl (epfd, EPOLL_CTL_DEL, currentfd, nullptr);
+                        --client_count;
+                        break;
+                    }
+
+                    // recv error 
+                    else {  
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) break;     // socket fully drained
+                        perror ("recv");
+                        close (currentfd);
+                        epoll_ctl (epfd, EPOLL_CTL_DEL, currentfd, nullptr);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    close (listener);
+    close (epfd);
+
+
+    std::printf("\n\n");
+    return EXIT_SUCCESS;
+}
+
