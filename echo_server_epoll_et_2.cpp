@@ -139,11 +139,12 @@ int main() {
 
     
     // socket
-    int listener = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
+    // int listener = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
+    int listener = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);    
 
     // make listener socket non blocking
-    int flag_listener = fcntl (listener, F_GETFL, 0);
-    fcntl (listener, F_SETFL, flag_listener | O_NONBLOCK);
+    // int flag_listener = fcntl (listener, F_GETFL, 0);
+    // fcntl (listener, F_SETFL, flag_listener | O_NONBLOCK);
 
     // quick rebinding to the same port after restart
     int yes { 1 };
@@ -205,7 +206,7 @@ int main() {
                     sockaddr_storage  cli_addr  {};
                     socklen_t         addrlen   { sizeof(cli_addr) };
 
-                    int newfd = accept (listener, (sockaddr*)&cli_addr, &addrlen);
+                    int newfd = accept4 (listener, (sockaddr*)&cli_addr, &addrlen, SOCK_NONBLOCK);
 
                     if (newfd == -1) {
                         if (errno == EAGAIN || errno == EWOULDBLOCK) break;
@@ -226,8 +227,8 @@ int main() {
                     }
 
                     // make socket non blocking, make send/recv return immediately
-                    int flags = fcntl (newfd, F_GETFL, 0);
-                    fcntl (newfd, F_SETFL, flags | O_NONBLOCK);
+                    // int flags = fcntl (newfd, F_GETFL, 0);
+                    // fcntl (newfd, F_SETFL, flags | O_NONBLOCK);
 
                     std::printf("\nNew connection fd: %d\n", newfd);
 
