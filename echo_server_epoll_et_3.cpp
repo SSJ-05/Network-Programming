@@ -27,8 +27,8 @@ struct Client
 {
     alignas(64) char out_buf [8192];
     
-    std::uint32_t   write_pos  {};      // head
-    std::uint32_t   send_pos   {};      // tail
+    std::uint32_t   write_pos  { 0 };      // head
+    std::uint32_t   send_pos   { 0 };      // tail
 
     char* get_write_ptr () { return out_buf + (write_pos & 8191); }
 };
@@ -103,7 +103,7 @@ int main()
     // fcntl (listener, F_SETFL, flag_listener | O_NONBLOCK);
 
     // quick rebinding to the same port after restart
-    int yes { 1 };
+    int yes = 1;
     setsockopt (listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
     bind (listener, res->ai_addr, res->ai_addrlen);
@@ -115,7 +115,7 @@ int main()
 
 
     // create epoll instance/ kernel event manager
-    int epfd { epoll_create1(0) };
+    int epfd = epoll_create1(0);
     
     if (epfd == -1) {
         perror ("epoll_create1");
