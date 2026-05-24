@@ -114,6 +114,34 @@ int main()
 
 
 
+    // create epoll instance/ kernel event manager
+    int epfd { epoll_create1(0) };
+    
+    if (epfd == -1) {
+        perror ("epoll_create1");
+        exit(EXIT_FAILURE);
+    }
+
+
+
+    // register listener socket
+    epoll_event ev {};                    // ev = which events to monitor
+    epoll_event events [MAX_EVENTS];      // buffer for listener + new connections
+
+    ev.events   =   EPOLLET |             // edge triggered
+                    EPOLLIN |             // notify when ready
+                    EPOLLRDHUP;           // peer disconnected full/half
+    ev.data.fd  =   listener;             // store fd of the event
+
+    if (epoll_ctl (epfd, EPOLL_CTL_ADD, listener, &ev) == -1) {
+        perror ("epoll_ctl");
+        exit(EXIT_FAILURE);
+    }
+
+    std::printf("\nWaiting for connection...\n");
+
+
+
 
     
     std::printf("\n\n");
