@@ -119,4 +119,3 @@ int main()
     std::printf("\n\n");
     return EXIT_SUCCESS;
 }
-}
