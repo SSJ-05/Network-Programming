@@ -78,3 +78,45 @@ void flush_send_buffer (int fd, epoll_event& ev, int epfd, Client& client)
     epoll_ctl (epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
+
+int main() 
+{
+    std::printf("\n=== Edge Triggered epoll server ===\n");
+    
+    // getaddrinfo
+    addrinfo hints {}, *res;    // hints = socket properties, res = linked list returned by kernel
+    
+    hints.ai_family     =   AF_INET;
+    hints.ai_socktype   =   SOCK_STREAM;
+    hints.ai_flags      =   AI_PASSIVE;
+
+    // getaddrinfo (nullptr, MYPORT, &hints, &res);
+
+
+    
+    // socket
+    // int listener = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
+    int listener = socket (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
+
+    // make listener socket non blocking
+    // int flag_listener = fcntl (listener, F_GETFL, 0);
+    // fcntl (listener, F_SETFL, flag_listener | O_NONBLOCK);
+
+    // quick rebinding to the same port after restart
+    int yes { 1 };
+    setsockopt (listener, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+    bind (listener, res->ai_addr, res->ai_addrlen);
+
+    listen (listener, SOMAXCONN);
+
+    freeaddrinfo (res);
+
+
+
+
+    
+    std::printf("\n\n");
+    return EXIT_SUCCESS;
+}
+}
