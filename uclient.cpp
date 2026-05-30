@@ -16,7 +16,7 @@
 
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
-constexpr char SERVADDR[]   { "127.0.0.1" };
+constexpr char SERVADDR[]   { "127.0.0.1" };    // server's ip addr
 
 int main () {
 
@@ -27,7 +27,11 @@ int main () {
     hints.ai_family     =   AF_INET;
     hints.ai_socktype   =   SOCK_DGRAM;
     
-    getaddrinfo (SERVADDR, SERVERPORT, &hints, &res);
+    int gai = getaddrinfo (SERVADDR, SERVERPORT, &hints, &res);
+    if (gai != 0) {
+        std::fprintf (stderr, "getaddrinfo: %s\n", gai_strerror(gai));  // getaddrinfo dont use errno/perror
+        return EXIT_FAILURE;
+    }
 
     // 1. create a socket
     int socketfd = socket (res->ai_family, res->ai_socktype, res->ai_protocol);
@@ -40,31 +44,35 @@ int main () {
     // int result = connect ();
 
     // 3. send message to UDP server
-    constexpr const char* msg { "Client says Hello world.\n" };
+    constexpr char msg[] { "Client says Hello world.\n" };
 
-    int sn = sendto (socketfd, msg, strlen(msg), MSG_DONTWAIT, res->ai_addr, res->ai_addrlen);
+    int sn = sendto (socketfd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
     if (sn == -1) {
         perror ("sendto");
         return EXIT_FAILURE;
     }
+    std::printf("Echo sent to server : %s\n", msg);
 
 
     // 4. recv msg from UDP server
-    // std::uint8_t buffer [1024];
-    //
-    // int r;
-    // while ((r = recvfrom (socketfd, buffer, sizeof(buffer), 0, res->ai_addr, res->ai_addrlen)) > 0) {
-    //     write (STDOUT_FILENO, buffer, n);
-    // }
+    char buffer [1024];
+    sockaddr_storage serv_addr {};
+    socklen_t servlen { sizeof(serv_addr) };
+
+    int bytes = recvfrom (socketfd, buffer, sizeof(buffer)-1, 0, (sockaddr*)&serv_addr, &servlen);
+    
+    if (bytes > 0) {
+        buffer [bytes] = '\0';
+        std::printf("Echo received from server : %s\n", buffer);
+    }
 
 
     // 5. close
     freeaddrinfo (res);
     close (socketfd);
 
-    // std::printf("actual bytes: %d\n", strlen(msg));
-    std::printf("Client sent %d bytes\n", sn);
-    std::printf("Client at disconnected from fd %d\n", socketfd);
+    std::printf("Sent %d bytes to %s:%s\n", sn, SERVADDR, SERVERPORT);
+    std::printf("Client disconnected from fd %d\n", socketfd);
 
     std::printf("\n\n");
     return EXIT_SUCCESS;
