@@ -17,15 +17,16 @@
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
 
-volatile sig_atomic_t running { 1 };
-void sig_handler (int sig) { running = 0; }
+// for graceful shutdowns
+volatile sig_atomic_t RUNNING { 1 };
+void sig_handler (int sig) { RUNNING = 0; }
 
 
 int main () {
 
     std::printf("\n\n=== UDP Echo Server ===\n\n");
 
-    // signals
+    // signals for graceful shutdowns
     signal (SIGINT, sig_handler);
     signal (SIGTERM, sig_handler);
 
@@ -78,7 +79,7 @@ int main () {
     // 3. main event loop
     char buff [1024];    
     
-    while (running) {
+    while (RUNNING) {
         sockaddr_storage    cli_addr    {};
         socklen_t           cli_addrlen { sizeof(cli_addr) };
 
