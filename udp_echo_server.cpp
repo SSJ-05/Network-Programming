@@ -17,16 +17,16 @@
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
 
-// for graceful shutdowns
-volatile sig_atomic_t RUNNING { 1 };
-void sig_handler (int sig) { RUNNING = 0; }
+// for graceful shutdown
+volatile sig_atomic_t running { 1 };
+void sig_handler (int sig) { running = 0; }
 
 
 int main () {
 
     std::printf("\n\n=== UDP Echo Server ===\n\n");
 
-    // signals for graceful shutdowns
+    // signals
     signal (SIGINT, sig_handler);
     signal (SIGTERM, sig_handler);
 
@@ -37,14 +37,14 @@ int main () {
 
     // build server addr
     addrinfo hints {}, *res;
-    hints.ai_family     =   AF_INET;
+    hints.ai_family     =   AF_INET;        // ipv4
     hints.ai_socktype   =   SOCK_DGRAM;     // UDP
     hints.ai_flags      =   AI_PASSIVE;     // for binding
 
-    int gai = getaddrinfo (nullptr, SERVERPORT, &hints, &res);
+    int rv = getaddrinfo (nullptr, SERVERPORT, &hints, &res);
 
-    if (gai != 0) {
-        std::fprintf (stderr, "getaddrinfo: %s\n", gai_strerror(gai));  // getaddrinfo dont use errno/perror
+    if (rv != 0) {
+        std::fprintf (stderr, "getaddrinfo: %s\n", gai_strerror(rv));  // getaddrinfo dont use errno/perror
         return EXIT_FAILURE;
     }
 
@@ -79,7 +79,7 @@ int main () {
     // 3. main event loop
     char buff [1024];    
     
-    while (RUNNING) {
+    while (running) {
         sockaddr_storage    cli_addr    {};
         socklen_t           cli_addrlen { sizeof(cli_addr) };
 
