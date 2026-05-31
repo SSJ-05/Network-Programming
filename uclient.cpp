@@ -1,5 +1,16 @@
 // udp client// 30.05.26// ZeroK
 
+/* NOTES:
+ * connect() in udp is diff from connect in tcp
+ * connect() in tcp = create connection state (sequencing, retransmission, congestion control, flow control)
+ * use when accuracy > latency = must recv in correct order
+ * connect() in udp = only store destination addr (no handshake, ordering, flow control)
+ * use when latency > reliability = must move forward w/o stallling the system
+ * */
+
+// IMP: use send/recv with connect and sendto/recvfrom w/o connect
+
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -18,6 +29,7 @@
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
 constexpr char SERVADDR[]   { "127.0.0.1" };    // server's ip addr
 
+
 int main () {
 
     std::printf("\n\n=== UDP Client ===\n\n");
@@ -27,9 +39,9 @@ int main () {
     hints.ai_family     =   AF_INET;
     hints.ai_socktype   =   SOCK_DGRAM;
     
-    int gai = getaddrinfo (SERVADDR, SERVERPORT, &hints, &res);
-    if (gai != 0) {
-        std::fprintf (stderr, "getaddrinfo: %s\n", gai_strerror(gai));  // getaddrinfo dont use errno/perror
+    int rv = getaddrinfo (SERVADDR, SERVERPORT, &hints, &res);
+    if (rv != 0) {
+        std::fprintf (stderr, "getaddrinfo: %s\n", gai_strerror(rv));  // getaddrinfo dont use errno/perror
         return EXIT_FAILURE;
     }
 
@@ -41,29 +53,37 @@ int main () {
     }
 
     // 2. connect
-    // int result = connect ();
+    // int result = connect (socketfd, res->ai_addr, res->ai_addrlen);
+    // if (result == -1) {
+    //     perror ("connect");
+    //     return EXIT_FAILURE;
+    // }
 
     // 3. send message to UDP server
     constexpr char msg[] { "Client says Hello world.\n" };
 
     int sn = sendto (socketfd, msg, strlen(msg), 0, res->ai_addr, res->ai_addrlen);
+    // int sn = send(socketfd, msg, strlen(msg), 0);
     if (sn == -1) {
         perror ("sendto");
         return EXIT_FAILURE;
     }
-    std::printf("Echo sent to server : %s\n", msg);
+    // std::printf("Echo sent to server : %s\n", msg);
 
 
     // 4. recv msg from UDP server
     char buffer [1024];
-    sockaddr_storage serv_addr {};
-    socklen_t servlen { sizeof(serv_addr) };
+    sockaddr_storage    serv_addr   {};
+    socklen_t           servlen     { sizeof(serv_addr) };
 
     int bytes = recvfrom (socketfd, buffer, sizeof(buffer)-1, 0, (sockaddr*)&serv_addr, &servlen);
+    // int bytes = recv(socketfd, buffer, sizeof(buffer)-1, 0);
+    if (bytes == -1) perror ("recvfrom");
     
     if (bytes > 0) {
-        buffer [bytes] = '\0';
-        std::printf("Echo received from server : %s\n", buffer);
+        // buffer [bytes] = '\0';
+        // std::printf("Echo received from server : %s\n", buffer);
+        write (STDOUT_FILENO, buffer, bytes);
     }
 
 
