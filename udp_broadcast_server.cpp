@@ -13,11 +13,12 @@
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
-#include <vector>
+
 
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
 constexpr int  MAX_SIZE     { 1024 };                                                
+constexpr int  MAX_CLI      { 64 };
 
 
 
@@ -26,6 +27,10 @@ struct alignas(64) Client {
     sockaddr_storage    addr     {};
     socklen_t           addrlen  {};
 };
+
+alignas(64) Client clients [MAX_CLI];
+alignas(64) std::size_t cli_count {};
+
 
 // client checker func
 bool is_same_client (const sockaddr_storage &a, const sockaddr_storage &b) 
@@ -77,7 +82,7 @@ int main () {
         exit (EXIT_FAILURE);
     }
     
-    // // 1a. make it non blocking
+    // 1a. make it non blocking
     int flag = fcntl (sockfd, F_GETFL, 0);
     fcntl (sockfd, F_SETFL, flag | O_NONBLOCK);
     
@@ -98,8 +103,6 @@ int main () {
 
 
     // 3. main event loop
-    std::vector<Client> clients;
-    clients.reserve(MAX_SIZE);
     char buff [MAX_SIZE];    
     
     while (RUNNING) {
@@ -114,9 +117,12 @@ int main () {
             break;
         }
 
+        // if unknown client, add to array
         bool known_client { false };
 
-        for (const auto& c : clients) {
+        for (auto i {0uz}; i < cli_count; ++i) {
+            const Client& c = clients[i];
+
             if (is_same_client (c.addr, cli_addr)) {
                 known_client = true;
                 break;
@@ -124,9 +130,10 @@ int main () {
         }
 
         if (!known_client) {
-            clients.push_back ({ cli_addr, cli_addrlen });
-            std::printf("\nNew client connected\n" 
-                        "Total clients : %zu\n", clients.size());
+            clients[cli_count++] = { cli_addr, cli_addrlen };
+
+            std::printf("\nNew client registered\n" 
+                        "Total clients : %zu\n", cli_count);
         }
 
         // print sender ip addr
@@ -142,13 +149,15 @@ int main () {
             write (STDOUT_FILENO, buff, bytes);
 
             // broadcast to all clients
-            for (const auto& c : clients) {
+            for (auto i {0uz}; i < cli_count; ++i) {
+                const Client& c = clients[i];
                 int sent = sendto (sockfd, buff, bytes, 0, (sockaddr*)&c.addr, c.addrlen);    // pass c.addrlen by value
             
                 if (sent == -1) perror ("sendto");
-                else std::printf("Echoed back %d bytes\n", sent);
+                else std::printf("\nEchoed back %d bytes to client %d\n", sent, i+1);
             }
         }
+
     } // while closed
 
 
