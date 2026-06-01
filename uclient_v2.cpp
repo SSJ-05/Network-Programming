@@ -23,9 +23,10 @@
 #include <thread>
 #include <atomic>
 
+
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
 constexpr char SERVADDR[]   { "127.0.0.1" };    // server's ip addr
-constexpr int  MAX_SIZE     { 1024 };                                                
+constexpr int  MAX_SIZE     { 1024 };           // buffer size 
 
 std::atomic<bool> RUNNING { true };
 
@@ -62,8 +63,12 @@ int main () {
     //     return EXIT_FAILURE;
     // }
 
+    // set kernel side socket buffer size
+    // SO_SNDBUF = how much kernel queues up before data goes on network
+    // SO_RCVBUF = how much kernel will buffer incoming packets before recv_buffer picks them up
+    // if this fills up = UDP packets are dropped silently
     constexpr int buf_sz { 256 * 1024 };
-    setsockopt (socketfd, SOL_SOCKET, SO_SNDBUF, &buf_sz, sizeof(buf_sz));
+    setsockopt (socketfd, SOL_SOCKET, SO_SNDBUF, &buf_sz, sizeof(buf_sz));  
     setsockopt (socketfd, SOL_SOCKET, SO_RCVBUF, &buf_sz, sizeof(buf_sz));
     
     /*******************************************************************************************************/
