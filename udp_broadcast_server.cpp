@@ -17,8 +17,8 @@
 
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
-constexpr int  MAX_SIZE     { 1024 };                                                
-constexpr int  MAX_CLI      { 64 };
+constexpr int  MAX_SIZE     { 1024 };           // buffer size                                     
+constexpr int  MAX_CLI      { 64 };             // no. of clients
 
 
 
@@ -103,6 +103,11 @@ int main () {
 
 
     // 3. main event loop
+    // set kernel side send and recv buffer to 256 KB
+    constexpr int buf_sz { 256 * 1024 };
+    setsockopt (socketfd, SOL_SOCKET, SO_SNDBUF, &buf_sz, sizeof(buf_sz));  
+    setsockopt (socketfd, SOL_SOCKET, SO_RCVBUF, &buf_sz, sizeof(buf_sz));
+ 
     char buff [MAX_SIZE];    
     
     while (RUNNING) {
