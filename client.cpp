@@ -10,6 +10,10 @@
 #include <cstdio>
 #include <cstring>
 
+constexpr char[] SERVERPORT    { "5555" };
+constexpr char[] SERVADDR      { "127.0.0.1" };
+constexpr int    BUFFER_SIZE   { 1024 }; 
+
 
 int main() {
 
@@ -20,13 +24,13 @@ int main() {
 
     // target server - google.com
     // const char* ip = "142.250.192.206";
-    const char* ip { "127.0.0.1" };
+    const char[] ip { SERVADDR };
 
     // build addr struct
     sockaddr_in address {};
     address.sin_family = AF_INET;        // IPv4
     // address.sin_port   = htons (80);     // convert host to network byte order(big endian) on port 80
-    address.sin_port   = htons (5555);
+    address.sin_port   = htons (SERVERPORT);
 
 
     inet_pton (AF_INET, ip, &address.sin_addr);    // convert ip string to binary
@@ -45,19 +49,19 @@ int main() {
     // const char* message =  "GET / HTTP/1.1\r\n"
     //                        "Host: google.com\r\n"
     //                        "Connection: close\r\n\r\n";
-    const char* message { "Client says hello" };
+    const char[] message { "Client says hello" };
 
     // 3. send request to target server
     send (socketfd, message, strlen(message), 0);
 
 
     // 4. receive response from server
-    char buffer [1024];        // store raw bytes from TCP stream
+    char buffer [BUFFER_SIZE];        // store raw bytes from TCP stream
     
     int n;
     while ( (n = recv (socketfd, buffer, sizeof(buffer) - 1, 0)) > 0) {
-        buffer[n] = '\0';            // make it valid c-string
-        write (1, buffer, n);        // print raw bytes
+        // buffer[n] = '\0';            // make it valid c-string
+        write (STDOUT_FILENO, buffer, n);        // print raw bytes
         // std::printf("[ recv chunk %d bytes ]\n", n);
     }
 
