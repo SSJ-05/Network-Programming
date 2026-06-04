@@ -10,9 +10,9 @@
 #include <cstdio>
 #include <cstring>
 
-constexpr char[] SERVERPORT    { "5555" };
-constexpr char[] SERVADDR      { "127.0.0.1" };
-constexpr int    BUFFER_SIZE   { 1024 }; 
+constexpr char SERVERPORT[]    { "5555" };
+constexpr char SERVADDR[]      { "127.0.0.1" };
+constexpr int  BUFFER_SIZE     { 1024 }; 
 
 
 int main() {
