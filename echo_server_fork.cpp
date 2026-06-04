@@ -127,7 +127,7 @@ int main () {
                 send (newfd, buff, r, 0);
 
                 // optional: debug print
-                write (1, buff, r);
+                write (STDOUT_FILENO, buff, r);
             }
 
             close (newfd);
