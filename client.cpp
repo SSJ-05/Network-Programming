@@ -24,7 +24,7 @@ int main() {
 
     // target server - google.com
     // const char* ip = "142.250.192.206";
-    const char[] ip { SERVADDR };
+    const char ip[] { SERVADDR };
 
     // build addr struct
     sockaddr_in address {};
@@ -49,7 +49,7 @@ int main() {
     // const char* message =  "GET / HTTP/1.1\r\n"
     //                        "Host: google.com\r\n"
     //                        "Connection: close\r\n\r\n";
-    const char[] message { "Client says hello" };
+    const char message[] { "Client says hello" };
 
     // 3. send request to target server
     send (socketfd, message, strlen(message), 0);
