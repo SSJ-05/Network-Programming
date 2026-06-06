@@ -4,6 +4,7 @@
  * made the client interactive by adding input thru fgets
  * removed threads - single threaded ops now
  * introduced select() - will continually check list of fds
+ * used connected udp sockets
  * */
 
 
@@ -29,19 +30,18 @@ constexpr char SERVERPORT[] { "7777" };         // server's port client will be 
 constexpr char SERVADDR[]   { "127.0.0.1" };    // server's ip addr
 constexpr int  MAX_SIZE     { 1024 };           // buffer size 
 
+
 volatile sig_atomic_t RUNNING { 1 };
 void sig_handler (int sig) { RUNNING = 0; }
 
 
 int main () {
 
-    std::printf("\n\n=== UDP Client v2.0 (with select()) ===\n\n");
+    std::printf("\n\n=== UDP Client v3.0 (with select()) ===\n\n");
 
     signal (SIGINT,  sig_handler);
     signal (SIGTERM, sig_handler);
 
-    sigset_t emptyset;
-    sigemptyset (&emptyset);
 
 
     // build addr struct
@@ -66,12 +66,16 @@ int main () {
 
 
     // 2. connect
-    // int result = connect (socketfd, res->ai_addr, res->ai_addrlen);
-    // if (result == -1) {
-    //     perror ("connect");
-    //     return EXIT_FAILURE;
-    // }
+    int result = connect (socketfd, res->ai_addr, res->ai_addrlen);
+    if (result == -1) {
+        perror ("connect");
+        freeaddrinfo (res);
+        close (socketfd);
+        return EXIT_FAILURE;
+    }
     
+    freeaddrinfo (res);
+
     /*******************************************************************************************************/
 
     fd_set master;
@@ -106,19 +110,17 @@ int main () {
 
 
                 if (strlen(send_buffer) > 0) {
-                    int sd = sendto (socketfd, send_buffer, strlen(send_buffer), 0, res->ai_addr, res->ai_addrlen);
+                    int sd = send (socketfd, send_buffer, strlen(send_buffer), 0);
                     if (sd == -1) perror ("sendto");
                     else std::printf("Sent %d bytes\n", sd);
                 }
+
             } // if (FD_ISSET...)
         
     /*******************************************************************************************************/
 
             if (FD_ISSET (socketfd, &read_fd)) {
-                sockaddr_storage    serv_addr   {};
-                socklen_t           servlen     { sizeof(serv_addr) };
-
-                int bytes = recvfrom (socketfd, recv_buffer, sizeof(recv_buffer)-1, 0, (sockaddr*)&serv_addr, &servlen);
+                int bytes = recv (socketfd, recv_buffer, sizeof(recv_buffer)-1, 0);
                 if (bytes > 0) {
                     // write (STDOUT_FILENO, recv_buffer, bytes);
                     recv_buffer[bytes] = '\0';
@@ -132,19 +134,13 @@ int main () {
                     break; 
                 }
             
-                else if (bytes == 0) {
-                    RUNNING = false;
-                    break; 
-                }
             } // if (FD_ISSET...)
 
         } // while
 
     /*******************************************************************************************************/
 
-
     // 5. close
-    freeaddrinfo (res);
     close (socketfd);
 
     std::printf("\n\n=== Client terminated ===\n");
