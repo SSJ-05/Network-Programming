@@ -24,7 +24,7 @@
 #include <thread>
 #include <atomic>
 
-#include "thread-pinning.hpp"    // in low-level repository
+#include "thread_pinning.hpp"    // in low-level-dev repository
 
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
