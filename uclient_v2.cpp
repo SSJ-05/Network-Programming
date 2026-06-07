@@ -3,6 +3,7 @@
 /* NOTES:
  * made the client interactive by adding input thru fgets
  * sendto and recvfrom now operate on different threads
+ * threads pinned to different cores via pthread_setaffinity_np (thread-pinning.hpp)
  * */
 
 
@@ -23,7 +24,7 @@
 #include <thread>
 #include <atomic>
 
-#include "thread-pinning.hpp"
+#include "thread-pinning.hpp"    // in low-level repository
 
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
