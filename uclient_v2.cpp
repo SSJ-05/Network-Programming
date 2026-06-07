@@ -23,6 +23,8 @@
 #include <thread>
 #include <atomic>
 
+#include "thread-pinning.hpp"
+
 
 constexpr char SERVERPORT[] { "7777" };         // server's port client will be connecting to
 constexpr char SERVADDR[]   { "127.0.0.1" };    // server's ip addr
@@ -75,6 +77,9 @@ int main () {
 
     // sender on thread 1
     std::thread sender ( [&] () noexcept {
+        
+        pin_thread (0);
+        
         char send_buffer [MAX_SIZE];
 
         while (RUNNING) {
@@ -110,6 +115,9 @@ int main () {
 
     // receiver on thread 2
     std::thread receiver ( [&] () noexcept {
+        
+        pin_thread (1);
+        
         sockaddr_storage    serv_addr   {};
         socklen_t           servlen     { sizeof(serv_addr) };
 
